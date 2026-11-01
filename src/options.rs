@@ -536,22 +536,46 @@ impl Options {
     }
 
     fn index_readme_parse<'s>(s: Cow<'s, OsStr>) -> Result<(bool, (ReadmeFormat, PathBuf)), OsString> {
+        let text = s.to_string_lossy();
         let mut top = false;
         let mut format = None;
         let mut name = None;
-        for token in s.as_encoded_bytes().split(|&b| b == b':') {
+        for token in text.split(':') {
             if let Some(option) = name.replace(token) {
                 match option {
-                    b"top" => top = true,
-                    b"bottom" => top = false,
-                    b"plain" => format = Some(ReadmeFormat::Plain),
-                    _ => return Err(unsafe { OsStr::from_encoded_bytes_unchecked(option) }.to_owned()),// TODO
+                    "top" => top = true,
+                    "bottom" => top = false,
+                    "plain" => format = Some(ReadmeFormat::Plain),
+                    _ => return Err(OsString::from(option)),
                 }
             }
         }
         Ok((top,
-            (format.ok_or_else(|| format!("Missing format: must be one of {{plain}}"))?,
-             unsafe { OsStr::from_encoded_bytes_unchecked(name.ok_or_else(|| format!("Missing name. Must be in the form of [[top|bottom:]plain:README]"))?) }
+            (format.ok_or_else(|| "Missing format: must be one of {plain}".to_string())?,
+             name.ok_or_else(|| "Missing name. Must be in the form of [[top|bottom:]plain:README]".to_string())?
                  .into())))
+    }
+}
+
+#[cfg(test)]
+mod index_readme_tests {
+    use super::*;
+    use std::borrow::Cow;
+    use std::ffi::OsStr;
+
+    #[test]
+    fn parses_top_plain_readme_without_unsafe_conversion() {
+        let (top, (format, path)) =
+            Options::index_readme_parse(Cow::Borrowed(OsStr::new("top:plain:README.md")))
+                .expect("valid readme option");
+        assert!(top);
+        assert!(matches!(format, ReadmeFormat::Plain));
+        assert_eq!(path, PathBuf::from("README.md"));
+    }
+
+    #[test]
+    fn rejects_unknown_readme_modifier() {
+        assert!(Options::index_readme_parse(Cow::Borrowed(OsStr::new("sideways:plain:README.md")))
+            .is_err());
     }
 }
