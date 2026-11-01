@@ -579,3 +579,20 @@ mod index_readme_tests {
             .is_err());
     }
 }
+
+#[cfg(test)]
+mod header_parse_tests {
+    use super::*;
+
+    #[test]
+    fn parses_the_header_name_and_trimmed_value() {
+        let (name, value) = Options::header_parse("X-Trace:  enabled").expect("valid header");
+        assert_eq!(name, "X-Trace");
+        assert_eq!(value, b"enabled");
+    }
+
+    #[test]
+    fn rejects_a_missing_header_value() {
+        assert!(Options::header_parse("X-Trace:  ").is_err());
+    }
+}
