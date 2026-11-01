@@ -595,4 +595,9 @@ mod header_parse_tests {
     fn rejects_a_missing_header_value() {
         assert!(Options::header_parse("X-Trace:  ").is_err());
     }
+
+    #[test]
+    fn rejects_an_empty_header_name() {
+        assert!(Options::header_parse(": value").is_err());
+    }
 }
