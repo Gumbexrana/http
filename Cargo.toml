@@ -67,7 +67,7 @@ features = ["hyper-native-tls"]
 path = "vendor/hyper-0.10.16"
 
 [dependencies.zip]
-version = "5.1"
+version = "9.1"
 default-features = false
 features = ["deflate-flate2", "chrono"]
 
